@@ -1,0 +1,21 @@
+node:internal/fs/watchers:329
+    throw error;
+    ^
+
+Error: ENOENT: no such file or directory, watch 'C:\dev\Android_Project - Copy\node_modules\@react-navigation\.core-Pq23qY7z\lib'
+    at FSWatcher.<computed> (node:internal/fs/watchers:321:19)
+    at Object.watch (node:fs:2548:36)
+    at #watchdir (C:\dev\Android_Project - Copy\node_modules\metro-file-map\src\watchers\FallbackWatcher.js:133:33)
+    at C:\dev\Android_Project - Copy\node_modules\metro-file-map\src\watchers\FallbackWatcher.js:233:31
+    at Walker.<anonymous> (C:\dev\Android_Project - Copy\node_modules\metro-file-map\src\watchers\FallbackWatcher.js:378:5)
+    at Walker.emit (node:events:509:28)
+    at C:\dev\Android_Project - Copy\node_modules\walker\lib\walker.js:69:16
+    at FSReqCallback.oncomplete (node:fs:185:23) {
+  errno: -4058,
+  syscall: 'watch',
+  code: 'ENOENT',
+  path: 'C:\\dev\\Android_Project - Copy\\node_modules\\@react-navigation\\.core-Pq23qY7z\\lib',
+  filename: 'C:\\dev\\Android_Project - Copy\\node_modules\\@react-navigation\\.core-Pq23qY7z\\lib'
+}
+
+Node.js v24.18.0

@@ -1,0 +1,102 @@
+
+Welcome to React Native v0.86
+Starting dev server on http://localhost:8081
+
+
+                        ▒▒▓▓▓▓▒▒
+                     ▒▓▓▓▒▒░░▒▒▓▓▓▒
+                  ▒▓▓▓▓░░░▒▒▒▒░░░▓▓▓▓▒
+                 ▓▓▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▓▓
+                 ▓▓░░░░░▒▓▓▓▓▓▓▒░░░░░▓▓
+                 ▓▓░░▓▓▒░░░▒▒░░░▒▓▒░░▓▓
+                 ▓▓░░▓▓▓▓▓▒▒▒▒▓▓▓▓▒░░▓▓
+                 ▓▓░░▓▓▓▓▓▓▓▓▓▓▓▓▓▒░░▓▓
+                 ▓▓▒░░▒▒▓▓▓▓▓▓▓▓▒░░░▒▓▓
+                  ▒▓▓▓▒░░░▒▓▓▒░░░▒▓▓▓▒
+                     ▒▓▓▓▒░░░░▒▓▓▓▒
+                        ▒▒▓▓▓▓▒▒
+
+
+ WARN  the transform cache was reset.
+                Welcome to Metro v0.84.4
+              Fast - Scalable - Integrated
+
+
+ WARN  Failed to download the latest version of React Native DevTools. Using a fallback version instead. Connect to the internet or check your network settings.
+ INFO  Dev server ready. Press Ctrl+C to exit.
+ INFO  Key commands available:
+
+   r  - reload app(s)
+   d  - open Dev Menu
+   j  - open DevTools
+
+ BUNDLE  ./index.js ░░░░░░░░░░░░░░░░ 0% (0/1)
+ BUNDLE  ./index.js ░░░░░░░░░░░░░░░░ 1% (1/1)
+ BUNDLE  ./index.js ▓▓▓▓░░░░░░░░░░░░ 25% (11/119)
+ BUNDLE  ./index.js ▓▓▓▓░░░░░░░░░░░░ 25% (56/208)
+ BUNDLE  ./index.js ▓▓▓▓░░░░░░░░░░░░ 30% (212/384)
+ BUNDLE  ./index.js ▓▓▓▓▓░░░░░░░░░░░ 35% (352/638)
+ BUNDLE  ./index.js ▓▓▓▓▓▓▓░░░░░░░░░ 49% (483/689)
+ BUNDLE  ./index.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 68% (640/772)
+ BUNDLE  ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 86% (774/832)
+ BUNDLE  ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 98% (919/952)
+ BUNDLE  ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99% (999/1001)
+ BUNDLE  ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99% (1000/1001)
+ BUNDLE  ./index.js 
+ ERROR  Error: Unable to resolve module ../../assets/images/logo.svg from C:\dev\Android_Project - Copy\src\screens\auth\SignUpScreen.js: 
+
+None of these files exist:
+  * logo.svg
+  * src\assets\images\logo.svg
+  16 | import auth from '@react-native-firebase/auth';
+  17 | import firestore from '@react-native-firebase/firestore';
+> 18 | import LogoSVG from '../../assets/images/logo.svg';
+     |                      ^
+  19 |
+  20 | const { width, height } = Dimensions.get('window');
+  21 |
+    at ModuleResolver.resolveDependency (C:\dev\Android_Project - Copy\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:143:15)
+    at DependencyGraph.resolveDependency (C:\dev\Android_Project - Copy\node_modules\metro\src\node-haste\DependencyGraph.js:263:43)
+    at C:\dev\Android_Project - Copy\node_modules\metro\src\lib\transformHelpers.js:165:21
+    at resolveDependencies (C:\dev\Android_Project - Copy\node_modules\metro\src\DeltaBundler\buildSubgraph.js:43:25)
+    at visit (C:\dev\Android_Project - Copy\node_modules\metro\src\DeltaBundler\buildSubgraph.js:81:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Promise.all (index 4)
+    at async visit (C:\dev\Android_Project - Copy\node_modules\metro\src\DeltaBundler\buildSubgraph.js:90:5)
+    at async Promise.all (index 2)
+    at async visit (C:\dev\Android_Project - Copy\node_modules\metro\src\DeltaBundler\buildSubgraph.js:90:5)
+ BUNDLE  ./index.js ░░░░░░░░░░░░░░░░ 0% (0/1)
+ BUNDLE  ./index.js 
+ ERROR  SyntaxError: C:\dev\Android_Project - Copy\src\screens\chat\ChatWindowScreen.js: Identifier 'React' has already been declared. (19:7)
+
+  17 |
+  18 |
+> 19 | import React, { useState, useEffect } from 'react';
+     |        ^
+  20 | import {
+  21 |   View,
+  22 |   Text,
+ BUNDLE  ./index.js ░░░░░░░░░░░░░░░░ 0% (0/1)
+ BUNDLE  ./index.js 
+ ERROR  Error: Unable to resolve module ../screens/home/ChatsListScreen from C:\dev\Android_Project - Copy\src\navigation\MainTabNavigator.js: 
+
+None of these files exist:
+  * src\screens\home\ChatsListScreen(.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * src\screens\home\ChatsListScreen
+  4 | import { Ionicons } from '@expo/vector-icons';
+  5 | import { useTheme } from '../firebase/context/ThemeContext';
+> 6 | import ChatsListScreen from '../screens/home/ChatsListScreen';
+    |                              ^
+  7 |
+  8 | const Tab = createBottomTabNavigator();
+  9 |
+    at ModuleResolver.resolveDependency (C:\dev\Android_Project - Copy\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:143:15)
+    at DependencyGraph.resolveDependency (C:\dev\Android_Project - Copy\node_modules\metro\src\node-haste\DependencyGraph.js:263:43)
+    at C:\dev\Android_Project - Copy\node_modules\metro\src\lib\transformHelpers.js:165:21
+    at resolveDependencies (C:\dev\Android_Project - Copy\node_modules\metro\src\DeltaBundler\buildSubgraph.js:43:25)
+    at visit (C:\dev\Android_Project - Copy\node_modules\metro\src\DeltaBundler\buildSubgraph.js:81:30)
+    at async Promise.all (index 8)
+    at async visit (C:\dev\Android_Project - Copy\node_modules\metro\src\DeltaBundler\buildSubgraph.js:90:5)
+    at async Promise.all (index 2)
+    at async visit (C:\dev\Android_Project - Copy\node_modules\metro\src\DeltaBundler\buildSubgraph.js:90:5)
+    at async Promise.all (index 2)

@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import { storage } from '../firebase/storage';
+import { storage } from '../storage';
 
 const AuthContext = createContext();
 

@@ -1,9 +1,3 @@
-import {getStorage}
-from "firebase/storage";
+import storage from '@react-native-firebase/storage';
 
-import {app}
-from "./config";
-
-
-export const storage =
-getStorage(app);
+ export { storage };

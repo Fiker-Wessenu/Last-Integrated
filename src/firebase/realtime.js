@@ -1,11 +1,3 @@
-import {
-getDatabase
-}
-from "firebase/database";
+import database from '@react-native-firebase/database';
 
-import {app}
-from "./config";
-
-
-export const realtime =
-getDatabase(app);
+export const realtime = database();
