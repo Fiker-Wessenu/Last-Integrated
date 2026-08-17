@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-// import LogoSVG from '../../assets/images/logo.svg';
+import { useAuth } from '../../firebase/context/AuthContext';
+import LogoSVG from '../../assets/images/logo.svg';
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,6 +34,7 @@ function validatePassword(password) {
 }
 
 export default function SignUpScreen({ navigation }) {
+  const { signUp } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -68,8 +70,8 @@ export default function SignUpScreen({ navigation }) {
       setError('Please enter a valid email address');
       return;
     }
-    if (!email.toLowerCase().endsWith('@ssgi.gov.et')) {
-      setError('Email must be @ssgi.gov.et');
+    if (!email.toLowerCase().endsWith('@gmail.com')) {
+      setError('Email must be @gmail.com');
       return;
     }
     const passwordCheck = validatePassword(password);
@@ -86,27 +88,7 @@ export default function SignUpScreen({ navigation }) {
     setError('');
 
     try {
-      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
-      const user = userCredential.user;
-
-      // Set the display name on the Firebase Auth account itself
-      await user.updateProfile({
-        displayName: fullName.trim(),
-      });
-
-      await user.sendEmailVerification();
-
-      // Create the user's Firestore profile — required by your
-      // security rules, and used by the rest of the app.
-      await firestore().collection('users').doc(user.uid).set({
-        uid: user.uid,
-        fullName: fullName.trim(),
-        email: user.email,
-        photoURL: null, // default avatar shown client-side until they upload one
-        emailVerified: false,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-      });
-
+      await signUp(email, password, fullName);
       // No manual navigation here — AppNavigator's onAuthStateChanged listener
       // picks up the new signed-in user and routes to VerifyEmailScreen automatically,
       // since that screen only exists in the "!user.emailVerified" stack, not this one.
@@ -142,7 +124,7 @@ export default function SignUpScreen({ navigation }) {
             scrollEnabled={true}
           >
             <View style={styles.logoContainer}>
-              <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#FFFFFF' }}>ORBIT</Text>
+              <LogoSVG width={200} height={90} />
             </View>
 
             <View style={styles.textContainer}>
@@ -175,7 +157,7 @@ export default function SignUpScreen({ navigation }) {
                 <Text style={styles.inputLabel}>EMAIL</Text>
                 <TextInput
                   style={[styles.input, error && styles.inputError]}
-                  placeholder="yourname@ssgi.gov.et"
+                  placeholder="yourname@gmail.com"
                   placeholderTextColor="rgba(255,255,255,0.35)"
                   keyboardType="email-address"
                   autoCapitalize="none"

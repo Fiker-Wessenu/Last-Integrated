@@ -14,12 +14,14 @@ import {
   ScrollView,
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
-// import AntennaTip from '../../assets/images/antenna-tip.svg';
-// import LogoSVG from '../../assets/images/logo.svg';
+import { useAuth } from '../../firebase/context/AuthContext';
+import AntennaTip from '../../assets/images/antenna-tip.svg';
+import LogoSVG from '../../assets/images/logo.svg';
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }) {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,14 +59,34 @@ export default function LoginScreen({ navigation }) {
       ])
     ).start();
   }, []);
+  const validatePassword = (password) => {
+  if (password.length < 12) {
+    return 'Password must be at least 12 characters long.';
+  }
+  if (!/[a-z]/.test(password)) {
+    return 'Password must contain at least one lowercase letter.';
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter.';
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return 'Password must contain at least one special character (e.g., !@#$%).';
+  }
+  return null; // valid
+};
 
+  // ✅ Normal email/password login – uses signIn from AuthContext
   const handleLogin = async () => {
+    // ── Email validation ──────────────────────────
     if (!email.trim() || !email.includes('@') || !email.includes('.')) {
       setError('Please enter a valid email address');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+
+    // ── Password validation ───────────────────────
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -72,11 +94,41 @@ export default function LoginScreen({ navigation }) {
     setError('');
 
     try {
-      await auth().signInWithEmailAndPassword(email, password);
-      // Navigation happens automatically via AppNavigator's onAuthStateChanged listener,
-      // which also routes unverified users to VerifyEmailScreen — no need to check here.
+      await signIn(email, password);
+      // navigation.navigate('Main'); // Usually handled by auth state listener
     } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
+      console.log('Login error:', err.message);
+
+      if (err.code === 'auth/user-not-found') {
+        setError('No account found with this email.');
+      } else if (err.code === 'auth/wrong-password') {
+        setError('Incorrect password.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many failed attempts. Please try again later.');
+      } else {
+        setError(err.message || 'Login failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  // ✅ Placeholder for Google sign‑in – you can implement later
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      // If you have signInWithGoogle in your AuthContext, call it here.
+      // For now, we'll show an alert or just simulate.
+      // await signInWithGoogle();
+      setError('Google sign‑in coming soon!');
+      setLoading(false);
+    } catch (err) {
+      const message = err?.message?.includes('cancel')
+        ? 'Google sign-in was cancelled.'
+        : 'Google sign-in failed. Please try again.';
+      setError(message);
       setLoading(false);
     }
   };
@@ -105,7 +157,7 @@ export default function LoginScreen({ navigation }) {
           >
             {/* Logo */}
             <View style={styles.logoContainer}>
-              <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#1B5674' }}>ORBIT</Text>
+              <LogoSVG width={200} height={90} />
             </View>
 
             {/* Title */}
@@ -115,7 +167,7 @@ export default function LoginScreen({ navigation }) {
               <Text style={styles.subtitle}>FROM EARTH TO SPACE</Text>
             </View>
 
-            {/* Antenna with Signal Waves */}
+            {/* Antenna + Signal Waves */}
             <View style={styles.broadcastContainer}>
               <View style={styles.signalWrapper}>
                 <Animated.View
@@ -141,7 +193,7 @@ export default function LoginScreen({ navigation }) {
                 />
               </View>
               <View style={styles.antennaContainer}>
-                <View style={{ width: 80, height: 100, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 10 }} />
+                <AntennaTip width={80} height={100} />
               </View>
             </View>
 
@@ -150,7 +202,7 @@ export default function LoginScreen({ navigation }) {
               <Text style={styles.inputLabel}>EMAIL</Text>
               <TextInput
                 style={[styles.input, error ? styles.inputError : null]}
-                placeholder="yourname@ssgi.gov.et"
+                placeholder="yourname@gmail.com"
                 placeholderTextColor="rgba(0,0,0,0.35)"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -185,7 +237,7 @@ export default function LoginScreen({ navigation }) {
             {/* Error Message */}
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-            {/* Login Button */}
+            {/* Sign In Button */}
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleLogin}
@@ -199,21 +251,31 @@ export default function LoginScreen({ navigation }) {
               )}
             </TouchableOpacity>
 
-            {/* ===== SIGN UP OPTION ===== */}
-            <View style={styles.signUpContainer}>
-              <Text style={styles.signUpText}>Don't have an account?</Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('Register')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.signUpLink}> Sign Up</Text>
-              </TouchableOpacity>
-            </View>
+            {/* Google Sign‑In Button */}
+            <TouchableOpacity
+              style={[styles.googleButton, loading && styles.buttonDisabled]}
+              onPress={handleGoogleSignIn}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.googleButtonText}>CONTINUE WITH GOOGLE</Text>
+            </TouchableOpacity>
+
+            {/* Sign Up Link */}
+            <TouchableOpacity
+              style={styles.signUpContainer}
+              onPress={() => navigation.navigate('SignUp')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.signUpText}>
+                Don't have an account?<Text style={styles.signUpLink}> Sign Up</Text>
+              </Text>
+            </TouchableOpacity>
 
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                Please use your institutional email
+                Use your Google account or email and password
               </Text>
             </View>
           </ScrollView>
@@ -292,7 +354,6 @@ const styles = StyleSheet.create({
   signalWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
   },
   signalWave: {
     position: 'absolute',
@@ -331,7 +392,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: 'rgba(0, 0, 0, 1)',
+    color: 'rgba(0, 0, 0, 0.8)',
     marginBottom: 6,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
@@ -340,7 +401,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
     borderRadius: 14,
@@ -375,6 +436,16 @@ const styles = StyleSheet.create({
     elevation: 4,
     marginTop: 8,
   },
+  googleButton: {
+    height: 56,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#D0D7DE',
+    marginTop: 12,
+  },
   buttonDisabled: {
     opacity: 0.5,
     elevation: 0,
@@ -384,6 +455,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 2,
+  },
+  googleButtonText: {
+    color: '#1B5674',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 1.2,
   },
   footer: {
     marginTop: 24,

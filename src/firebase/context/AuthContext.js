@@ -65,10 +65,35 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await auth().signOut();
-      // setUser(null) happens automatically via onAuthStateChanged above.
     } catch (error) {
-      // fail silently on logout, matching previous behavior
+      console.error('Logout error:', error);
     }
+  };
+
+  const signIn = async (email, password) => {
+    return await auth().signInWithEmailAndPassword(email, password);
+  };
+
+  const signUp = async (email, password, fullName) => {
+    const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    await user.updateProfile({
+      displayName: fullName.trim(),
+    });
+
+    await user.sendEmailVerification();
+
+    await firestore().collection('users').doc(user.uid).set({
+      uid: user.uid,
+      fullName: fullName.trim(),
+      email: user.email,
+      photoURL: null,
+      emailVerified: false,
+      createdAt: firestore.FieldValue.serverTimestamp(),
+    });
+
+    return userCredential;
   };
 
   const updateProfilePicture = async (localUri) => {
@@ -91,7 +116,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout, updateProfilePicture }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, logout, updateProfilePicture }}>
       {children}
     </AuthContext.Provider>
   );
