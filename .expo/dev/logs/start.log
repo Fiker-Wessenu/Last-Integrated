@@ -1,0 +1,8 @@
+{"_e":"root:init","_t":1788435922090,"format":"v0-jsonl","version":"57.0.12"}
+{"_e":"env:mode","_t":1788435922092,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1788435922095,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1788435922438,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1788435922931,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"metro:server_log","_t":1788435923196,"level":"warn","data":["Failed to download the latest version of React Native DevTools. Using a fallback version instead. Connect to the internet or check your network settings."]}
+{"_e":"expo:dev-tools-plugin:load","_t":1788435923398,"plugins":[]}
+{"_e":"metro:instantiate","_t":1788435932247,"atlas":false,"workers":6,"host":"::","port":8081}

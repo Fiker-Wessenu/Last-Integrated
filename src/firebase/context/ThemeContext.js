@@ -1,21 +1,53 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// ─── Theme Presets ──────────────────────────────────────────
+// Each preset overrides the accent-driven keys only (primary, active tab,
+// unread badges, active nav icon) — structural colors (headerBg, bottomBarBg,
+// card backgrounds, text, borders) still come from the base light/dark palette.
+export const THEME_PRESETS = {
+  ssgiBlue: {
+    name: 'SSGI Blue',
+    primary: '#0088cc',
+    accent: '#de994a',
+  },
+  gold: {
+    name: 'Gold',
+    primary: '#b8860b',
+    accent: '#f0c040',
+  },
+  purple: {
+    name: 'Purple',
+    primary: '#6c5ce7',
+    accent: '#a29bfe',
+  },
+  deepSpace: {
+    name: 'Deep Space',
+    primary: '#1a1a2e',
+    accent: '#6c5ce7',
+  },
+};
 
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const systemScheme = useColorScheme();
-  const [theme, setTheme] = useState('light');
 
-  useEffect(() => {
-    setTheme(systemScheme);
-  }, [systemScheme]);
+  // ─── State ──────────────────────────────────────────────────
+  const [themeMode, setThemeMode] = useState('system'); // 'light' | 'dark' | 'system'
+  const [preset, setPreset] = useState('ssgiBlue');
+  const [accentColor, setAccentColor] = useState(null); // overrides preset accent when set
 
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
+  // ─── Resolve light/dark from mode + device scheme ──────────
+  const theme = themeMode === 'system'
+    ? (systemScheme === 'dark' ? 'dark' : 'light')
+    : themeMode;
 
-  const colors = {
+  const isDark = theme === 'dark';
+
+  // ─── Base palettes (unchanged from your existing app) ──────
+  const baseColors = {
     light: {
       background: '#ffffff',
       text: '#1a1a1a',
@@ -68,10 +100,79 @@ export const ThemeProvider = ({ children }) => {
     },
   };
 
-  const currentTheme = colors[theme] || colors.light;
+  // ─── Layer preset + custom accent on top of the base palette ─
+  const presetColors = THEME_PRESETS[preset] || THEME_PRESETS.ssgiBlue;
+  const resolvedAccent = accentColor || presetColors.accent;
+
+  const currentTheme = {
+    ...(baseColors[theme] || baseColors.light),
+    primary: presetColors.primary,
+    tabActiveBg: resolvedAccent,
+    unreadBg: resolvedAccent,
+    navIconActive: presetColors.primary,
+  };
+
+  // ─── Persistence ───────────────────────────────────────────
+  useEffect(() => {
+    loadPreferences();
+  }, []);
+
+  useEffect(() => {
+    savePreferences();
+  }, [themeMode, preset, accentColor]);
+
+  const loadPreferences = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('theme_prefs');
+      if (saved) {
+        const prefs = JSON.parse(saved);
+        if (prefs.themeMode) setThemeMode(prefs.themeMode);
+        if (prefs.preset) setPreset(prefs.preset);
+        if (prefs.accentColor) setAccentColor(prefs.accentColor);
+      }
+    } catch (error) {
+      console.warn('Failed to load theme preferences', error);
+    }
+  };
+
+  const savePreferences = async () => {
+    try {
+      await AsyncStorage.setItem('theme_prefs', JSON.stringify({
+        themeMode,
+        preset,
+        accentColor,
+      }));
+    } catch (error) {
+      console.warn('Failed to save theme preferences', error);
+    }
+  };
+
+  const setTheme = (mode) => setThemeMode(mode);
+  const setThemePreset = (p) => setPreset(p);
+  const setCustomAccent = (color) => setAccentColor(color);
+
+  // toggleTheme keeps its old two-value behavior for any screen that
+  // just wants a day/night switch — it always resolves to an explicit
+  // 'light' or 'dark', taking the app out of 'system' mode.
+  const toggleTheme = () => {
+    setThemeMode(theme === 'light' ? 'dark' : 'light');
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, colors: currentTheme }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        isDark,
+        themeMode,
+        preset,
+        accentColor,
+        colors: currentTheme,
+        toggleTheme,
+        setTheme,
+        setThemePreset,
+        setCustomAccent,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

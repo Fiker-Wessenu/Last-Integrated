@@ -8,8 +8,24 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import SignUpScreen from '../screens/auth/SignUpScreen';
 import VerifyEmailScreen from '../screens/auth/VerifyEmailScreen';
 import ChatWindowScreen from '../screens/chat/ChatWindowScreen';
-import ProfileScreen from '../screens/settings/ProfileScreen';
+import ProfileScreen from '../screens/Profile/ProfileScreen';
 import MainTabNavigator from './MainTabNavigator';
+
+import SettingsScreen from '../screens/settings/SettingsScreen';
+import NotificationsScreen from '../screens/notification/NotificationsScreen';
+import BaseScreen from '../screens/settings/BaseScreen';
+import NewChatScreen from '../screens/chat/NewChatScreen';
+import NewGroupScreen from '../screens/chat/NewGroupScreen';
+import AboutScreen from '../screens/settings/AboutScreen';
+import AccountScreen from '../screens/settings/AccountScreen';
+import ThemeScreen from '../screens/settings/ThemeScreen';
+import NotificationsSettingsScreen from '../screens/settings/NotificationsSettingsScreen';
+import PrivacySecurityScreen from '../screens/settings/PrivacySecurityScreen';
+import HelpFAQScreen from '../screens/settings/HelpFAQScreen';
+import ChatSettingsScreen from '../screens/settings/ChatSettingsScreen';
+import BackupStorageScreen from '../screens/settings/BackupStorageScreen';
+import MessageSettingsScreen from '../screens/settings/MessageSettingsScreen';
+import DevicesScreen from '../screens/settings/DevicesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -34,7 +50,7 @@ export default function AppNavigator() {
           // Not logged in
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={SignUpScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} />
           </>
         ) : !user.emailVerified ? (
           // Logged in but hasn't verified their email yet
@@ -42,11 +58,37 @@ export default function AppNavigator() {
         ) : (
           // Logged in and verified — main app.
           // MainTabNavigator holds the bottom tabs (Chats/Calls/Contacts/Settings);
-          // ChatWindow and Profile push on top of it, full-screen, outside the tab bar.
+          // everything below pushes on top of it, full-screen, outside the tab bar.
           <>
             <Stack.Screen name="MainTabs" component={MainTabNavigator} />
             <Stack.Screen name="ChatWindow" component={ChatWindowScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
+            <Stack.Screen name="NewChat" component={NewChatScreen} />
+            <Stack.Screen name="NewGroup" component={NewGroupScreen} />
+
+            {/* ─── Settings Sub-screens ─────────────────────────── */}
+            <Stack.Screen name="Account" component={AccountScreen} />
+            <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+            <Stack.Screen name="Devices" component={DevicesScreen} />
+            <Stack.Screen name="Chats" component={ChatSettingsScreen} />
+            <Stack.Screen name="MessageSettings" component={MessageSettingsScreen} />
+            <Stack.Screen name="BackupStorage" component={BackupStorageScreen} />
+            <Stack.Screen name="NotificationsSettings" component={NotificationsSettingsScreen} />
+            <Stack.Screen
+              name="NotificationSound"
+              component={BaseScreen}
+              initialParams={{ title: 'Notification Sound' }}
+            />
+            <Stack.Screen name="ThemePicker" component={ThemeScreen} />
+            <Stack.Screen
+              name="AccentColor"
+              component={BaseScreen}
+              initialParams={{ title: 'Accent Color' }}
+            />
+            <Stack.Screen name="HelpFAQ" component={HelpFAQScreen} />
+            <Stack.Screen name="About" component={AboutScreen} />
           </>
         )}
       </Stack.Navigator>

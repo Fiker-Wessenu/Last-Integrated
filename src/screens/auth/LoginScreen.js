@@ -13,10 +13,10 @@ import {
   Animated,
   ScrollView,
 } from 'react-native';
-import auth from '@react-native-firebase/auth';
-import { useAuth } from '../../firebase/context/AuthContext';
+import Svg, { Path } from 'react-native-svg';
 import AntennaTip from '../../assets/images/antenna-tip.svg';
 import LogoSVG from '../../assets/images/logo.svg';
+import { useAuth } from '../../firebase/context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,6 +24,7 @@ export default function LoginScreen({ navigation }) {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -59,34 +60,15 @@ export default function LoginScreen({ navigation }) {
       ])
     ).start();
   }, []);
-  const validatePassword = (password) => {
-  if (password.length < 12) {
-    return 'Password must be at least 12 characters long.';
-  }
-  if (!/[a-z]/.test(password)) {
-    return 'Password must contain at least one lowercase letter.';
-  }
-  if (!/[A-Z]/.test(password)) {
-    return 'Password must contain at least one uppercase letter.';
-  }
-  if (!/[^A-Za-z0-9]/.test(password)) {
-    return 'Password must contain at least one special character (e.g., !@#$%).';
-  }
-  return null; // valid
-};
 
-  // ✅ Normal email/password login – uses signIn from AuthContext
   const handleLogin = async () => {
     // ── Email validation ──────────────────────────
     if (!email.trim() || !email.includes('@') || !email.includes('.')) {
       setError('Please enter a valid email address');
       return;
     }
-
-    // ── Password validation ───────────────────────
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      setError(passwordError);
+    if (password.length < 12) {
+      setError('Password must be at least 12 characters');
       return;
     }
 
@@ -95,40 +77,21 @@ export default function LoginScreen({ navigation }) {
 
     try {
       await signIn(email, password);
-      // navigation.navigate('Main'); // Usually handled by auth state listener
+      // ✅ Navigation happens automatically when user state changes
     } catch (err) {
       console.log('Login error:', err.message);
-
       if (err.code === 'auth/user-not-found') {
         setError('No account found with this email.');
       } else if (err.code === 'auth/wrong-password') {
         setError('Incorrect password.');
       } else if (err.code === 'auth/too-many-requests') {
         setError('Too many failed attempts. Please try again later.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Invalid email address.');
       } else {
         setError(err.message || 'Login failed. Please try again.');
       }
     } finally {
-      setLoading(false);
-    }
-  };
-
-
-  // ✅ Placeholder for Google sign‑in – you can implement later
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      // If you have signInWithGoogle in your AuthContext, call it here.
-      // For now, we'll show an alert or just simulate.
-      // await signInWithGoogle();
-      setError('Google sign‑in coming soon!');
-      setLoading(false);
-    } catch (err) {
-      const message = err?.message?.includes('cancel')
-        ? 'Google sign-in was cancelled.'
-        : 'Google sign-in failed. Please try again.';
-      setError(message);
       setLoading(false);
     }
   };
@@ -167,7 +130,7 @@ export default function LoginScreen({ navigation }) {
               <Text style={styles.subtitle}>FROM EARTH TO SPACE</Text>
             </View>
 
-            {/* Antenna + Signal Waves */}
+            {/* Antenna with Signal Waves */}
             <View style={styles.broadcastContainer}>
               <View style={styles.signalWrapper}>
                 <Animated.View
@@ -202,7 +165,7 @@ export default function LoginScreen({ navigation }) {
               <Text style={styles.inputLabel}>EMAIL</Text>
               <TextInput
                 style={[styles.input, error ? styles.inputError : null]}
-                placeholder="yourname@gmail.com"
+                placeholder="normal@gmail.com"
                 placeholderTextColor="rgba(0,0,0,0.35)"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -219,29 +182,51 @@ export default function LoginScreen({ navigation }) {
             {/* Password Input */}
             <View style={styles.inputWrapper}>
               <Text style={styles.inputLabel}>PASSWORD</Text>
-              <TextInput
-                style={[styles.input, error ? styles.inputError : null]}
-                placeholder="Enter your password"
-                placeholderTextColor="rgba(0,0,0,0.35)"
-                secureTextEntry
-                value={password}
-                onChangeText={(text) => {
-                  setError('');
-                  setPassword(text);
-                }}
-                editable={!loading}
-                selectionColor="#DD984B"
-              />
+              <View style={styles.passwordInputContainer}>
+                <TextInput
+                  style={[styles.input, { flex: 1, paddingRight: 50 }, error ? styles.inputError : null]}
+                  placeholder="Enter your password"
+                  placeholderTextColor="rgba(0,0,0,0.35)"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={(text) => {
+                    setError('');
+                    setPassword(text);
+                  }}
+                  editable={!loading}
+                  selectionColor="#DD984B"
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword(!showPassword)}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Svg width={22} height={22} viewBox="0 0 24 24">
+                    {showPassword ? (
+                      <Path
+                        d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+                        fill="rgba(0,0,0,0.4)"
+                      />
+                    ) : (
+                      <Path
+                        d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.82l2.92 2.92c1.51-1.39 2.66-3.2 3.44-5.24-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 2.18 0 4.21-.59 5.97-1.61l.46.46L20.73 22l1.27-1.27L3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-2.79c-.06-.01-.13-.01-.19-.01-1.66 0-3 1.34-3 3 0 .07 0 .13.01.19l3.18-3.18z"
+                        fill="rgba(0,0,0,0.4)"
+                      />
+                    )}
+                  </Svg>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Error Message */}
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-            {/* Sign In Button */}
+            {/* Login Button */}
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleLogin}
-              disabled={loading || !email.trim() || password.length < 6}
+              disabled={loading || !email.trim() || password.length < 12}
               activeOpacity={0.7}
             >
               {loading ? (
@@ -251,32 +236,20 @@ export default function LoginScreen({ navigation }) {
               )}
             </TouchableOpacity>
 
-            {/* Google Sign‑In Button */}
-            <TouchableOpacity
-              style={[styles.googleButton, loading && styles.buttonDisabled]}
-              onPress={handleGoogleSignIn}
-              disabled={loading}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.googleButtonText}>CONTINUE WITH GOOGLE</Text>
-            </TouchableOpacity>
-
-            {/* Sign Up Link */}
-            <TouchableOpacity
-              style={styles.signUpContainer}
-              onPress={() => navigation.navigate('SignUp')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.signUpText}>
-                Don't have an account?<Text style={styles.signUpLink}> Sign Up</Text>
-              </Text>
-            </TouchableOpacity>
+            {/* ===== SIGN UP OPTION ===== */}
+            <View style={styles.signUpContainer}>
+              <Text style={styles.signUpText}>Don't have an account?</Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('SignUp')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.signUpLink}> Sign Up</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Footer */}
             <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                Use your Google account or email and password
-              </Text>
+              <Text style={styles.footerText}></Text>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -296,7 +269,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     width: '100%',
-    height: height * 0.53,
+    height: height * 0.52,
     backgroundColor: '#DD984B',
     borderTopLeftRadius: height * 0.92,
     borderTopRightRadius: height * 0.92,
@@ -354,6 +327,7 @@ const styles = StyleSheet.create({
   signalWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 8,
   },
   signalWave: {
     position: 'absolute',
@@ -392,7 +366,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: 'rgba(0, 0, 0, 0.8)',
+    color: 'rgba(0, 0, 0, 1)',
     marginBottom: 6,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
@@ -401,7 +375,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.4,
     shadowRadius: 4,
     elevation: 2,
     borderRadius: 14,
@@ -436,16 +410,6 @@ const styles = StyleSheet.create({
     elevation: 4,
     marginTop: 8,
   },
-  googleButton: {
-    height: 56,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#D0D7DE',
-    marginTop: 12,
-  },
   buttonDisabled: {
     opacity: 0.5,
     elevation: 0,
@@ -455,12 +419,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 2,
-  },
-  googleButtonText: {
-    color: '#1B5674',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 1.2,
   },
   footer: {
     marginTop: 24,
@@ -497,5 +455,19 @@ const styles = StyleSheet.create({
     color: '#1B5674',
     textDecorationLine: 'underline',
     marginLeft: 4,
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+    width: '100%',
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 16,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 5,
   },
 });

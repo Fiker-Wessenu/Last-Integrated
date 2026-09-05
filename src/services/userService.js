@@ -36,6 +36,20 @@ export async function getUserProfile(uid) {
   return fetchPromise;
 }
 
+export async function getAllUsers() {
+  try {
+    const snapshot = await db.collection('users').get();
+    console.log('Total users found in Firestore:', snapshot.docs.length);
+    return snapshot.docs.map(doc => ({
+      uid: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    return [];
+  }
+}
+
 // React hook: given an array of UIDs, resolves and returns a
 // { [uid]: { fullName, photoURL } } map. Only fetches UIDs it doesn't
 // already have, and updates the map as each one resolves.

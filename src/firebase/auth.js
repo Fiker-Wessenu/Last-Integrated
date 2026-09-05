@@ -2,6 +2,21 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { storage } from '../firebase/storage';
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      // Any signed-in user can read their own profile document
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Only the owner can update their own profile
+      allow update: if request.auth != null && request.auth.uid == userId;
+
+      // No create/delete rule included — add explicitly if your sign-up flow
+      // creates this doc client-side (e.g. in SignUpScreen)
+    }
+  }
+}
 
 const AuthContext = createContext();
 

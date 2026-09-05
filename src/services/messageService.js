@@ -9,9 +9,16 @@ export function subscribeToMessages(chatId, callback) {
     .doc(chatId)
     .collection('messages')
     .orderBy('createdAt', 'asc')
-    .onSnapshot((snap) => {
-      callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    .onSnapshot(
+      (snap) => {
+        if (snap) {
+          callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        }
+      },
+      (error) => {
+        console.error('Error in subscribeToMessages:', error);
+      }
+    );
 }
 
 // Send a message, then denormalize it onto the parent chat doc.
