@@ -9,8 +9,8 @@ import {
   SafeAreaView,
   Platform,
   KeyboardAvoidingView,
+  StatusBar,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../firebase/context/AuthContext';
 import { subscribeToMessages, sendMessage } from '../../services/messageService';
 
@@ -66,7 +66,7 @@ export default function ChatScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

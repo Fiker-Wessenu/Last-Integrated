@@ -7,8 +7,8 @@ import {
   SafeAreaView,
   StyleSheet,
   Platform,
+  StatusBar,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import Svg, { Path } from 'react-native-svg';
 
 const Icon = ({ name, size = 24, color = '#000' }) => {
@@ -80,7 +80,7 @@ export default function NotificationsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="chevron-back-outline" size={26} color="#ffffff" />

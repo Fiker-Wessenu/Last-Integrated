@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,14 +13,22 @@ import {
   Alert,
   ScrollView,
   StatusBar,
+  Image,
+  ActivityIndicator,
+  Linking,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { launchImageLibrary } from 'react-native-image-picker';
+import DocumentPicker from 'react-native-document-picker';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import { useTheme } from '../../firebase/context/ThemeContext';
 import Typography from '../../components/Typography';
 import { SPACING, RADIUS } from '../../constants/Typography';
 import { useAuth } from '../../firebase/context/AuthContext';
-import { subscribeToMessages, sendMessage } from '../../services/messageService';
+import { subscribeToMessages, sendMessage, uploadChatAttachment } from '../../services/messageService';
 import { useUserProfiles, getDisplayName } from '../../services/userService';
+
+const audioRecorderPlayer = new AudioRecorderPlayer();
 
 const Icon = ({ name, size = 24, color = '#000' }) => {
   let path = '';
@@ -35,6 +43,11 @@ const Icon = ({ name, size = 24, color = '#000' }) => {
   if (name === 'close') path = 'M18 6L6 18 M6 6l12 12';
   if (name === 'shield-checkmark-outline') path = 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4';
   if (name === 'person-add-outline') path = 'M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0-4-4 4 4 0 0 0 4 4z M19 8v6 M16 11h6';
+  if (name === 'attach-outline') path = 'M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48';
+  if (name === 'mic-outline') path = 'M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v1a7 7 0 0 1-14 0v-1 M12 18v4 M8 22h8';
+  if (name === 'image-outline') path = 'M3 3h18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z M8.5 8.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z M21 15l-5-5L5 21';
+  if (name === 'stop-circle-outline') path = 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M9 9h6v6H9z';
+  if (name === 'play-outline') path = 'M5 3l14 9-14 9V3z';
 
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -45,48 +58,12 @@ const Icon = ({ name, size = 24, color = '#000' }) => {
 
 // ─── Decision Enablers Data ──────────────────────────────────────────────
 const DECISION_ENABLERS = [
-  {
-    id: 'edas',
-    icon: 'location-outline',
-    title: 'eDAS Address Lookup',
-    description: 'Find digital addresses in 73 Ethiopian cities',
-    action: () => Alert.alert('eDAS Lookup', 'Search for digital addresses by city (Adama, Arba Minch, Jinka, etc.)'),
-  },
-  {
-    id: 'satellite',
-    icon: 'satellite-outline',
-    title: 'Satellite CORS Network',
-    description: '9 operational stations · 30 more planned',
-    action: () => Alert.alert('Satellite CORS', 'View live satellite data network status.'),
-  },
-  {
-    id: 'research',
-    icon: 'document-text-outline',
-    title: 'Research Publications',
-    description: 'Latest papers from S-ARC 2026 conference',
-    action: () => Alert.alert('Publications', 'Browse research papers and conference proceedings.'),
-  },
-  {
-    id: 'disaster',
-    icon: 'warning-outline',
-    title: 'Disaster Risk Alerts',
-    description: 'Flood · Landslide · Earthquake monitoring',
-    action: () => Alert.alert('Disaster Alerts', 'View current disaster risk data from remote sensing.'),
-  },
-  {
-    id: 'maps',
-    icon: 'map-outline',
-    title: 'Geospatial Data Maps',
-    description: 'Urban planning · Agriculture · Water resources',
-    action: () => Alert.alert('Geospatial Maps', 'Open interactive map viewer for SSGI data.'),
-  },
-  {
-    id: 'training',
-    icon: 'school-outline',
-    title: 'Training Programs',
-    description: 'Journey to the Space · SciGirls · Radio Astronomy',
-    action: () => Alert.alert('Training', 'View upcoming training and capacity building programs.'),
-  },
+  { id: 'edas', icon: 'location-outline', title: 'eDAS Address Lookup', description: 'Find digital addresses in 73 Ethiopian cities', action: () => Alert.alert('eDAS Lookup', 'Search for digital addresses by city') },
+  { id: 'satellite', icon: 'satellite-outline', title: 'Satellite CORS Network', description: '9 operational stations · 30 more planned', action: () => Alert.alert('Satellite CORS', 'View live satellite data network status.') },
+  { id: 'research', icon: 'document-text-outline', title: 'Research Publications', description: 'Latest papers from S-ARC 2026 conference', action: () => Alert.alert('Publications', 'Browse research papers.') },
+  { id: 'disaster', icon: 'warning-outline', title: 'Disaster Risk Alerts', description: 'Flood · Landslide · Earthquake monitoring', action: () => Alert.alert('Disaster Alerts', 'View current disaster risk data.') },
+  { id: 'maps', icon: 'map-outline', title: 'Geospatial Data Maps', description: 'Urban planning · Agriculture · Water resources', action: () => Alert.alert('Geospatial Maps', 'Open interactive map viewer.') },
+  { id: 'training', icon: 'school-outline', title: 'Training Programs', description: 'Journey to the Space · SciGirls · Radio Astronomy', action: () => Alert.alert('Training', 'View upcoming training programs.') },
 ];
 
 export default function ChatWindowScreen({ route, navigation }) {
@@ -98,11 +75,13 @@ export default function ChatWindowScreen({ route, navigation }) {
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState([]);
 
+  // Attachment state
+  const [uploading, setUploading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordTime, setRecordTime] = useState('00:00:00');
+
   const isDecisionChat = contactName === '🔑 Key Decision Enablers';
 
-  // Fallback to the dark space-navy palette if colors are missing/undefined —
-  // matches the look ChatWindowScreen had before it moved onto ThemeContext,
-  // so the screen won't visually break if theme data hasn't loaded yet.
   const bgColor = colors?.background || '#0a0e1a';
   const textColor = colors?.text || '#ffffff';
   const secondaryText = colors?.rowTime || '#a0a0b0';
@@ -111,48 +90,99 @@ export default function ChatWindowScreen({ route, navigation }) {
   const cardColor = colors?.rowBg || 'rgba(255,255,255,0.06)';
   const accentColor = colors?.tabActiveBg || '#de994a';
 
-  // Live-subscribe to this chat's messages once we have a real chatId.
-  // Without one (e.g. still on mock data from ChatsListScreen), this just
-  // stays empty rather than trying to read a nonexistent document.
+  const senderUids = [...new Set(messages.map((m) => m.senderId))];
+  const userProfiles = useUserProfiles(senderUids);
+
   useEffect(() => {
     if (!chatId || isDecisionChat) return;
-
-    const unsubscribe = subscribeToMessages(chatId, (fetchedMessages) => {
-      setMessages(fetchedMessages);
-    });
-
+    const unsubscribe = subscribeToMessages(chatId, (fetchedMessages) => setMessages(fetchedMessages));
     return unsubscribe;
   }, [chatId, isDecisionChat]);
 
-  const handleSendMessage = async () => {
-    if (!inputText.trim() || !chatId || !user?.uid) return;
+  const handleSendMessage = async (type = 'text', attachment = null) => {
+    if ((type === 'text' && !inputText.trim()) || !chatId || !user?.uid) return;
 
-    const textToSend = inputText.trim();
-    setInputText('');
+    const textToSend = type === 'text' ? inputText.trim() : '';
+    if (type === 'text') setInputText('');
 
     try {
-      await sendMessage(chatId, { senderId: user.uid, text: textToSend });
-      // No manual setMessages needed — the onSnapshot listener above
-      // picks up the new message automatically.
+      if (attachment) {
+        setUploading(true);
+        const url = await uploadChatAttachment(chatId, attachment.uri, attachment.name, type);
+        await sendMessage(chatId, {
+          senderId: user.uid,
+          text: textToSend,
+          type,
+          attachmentUrl: url,
+          attachmentName: attachment.name
+        });
+        setUploading(false);
+      } else {
+        await sendMessage(chatId, { senderId: user.uid, text: textToSend, type });
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
-      setInputText(textToSend); // restore so they don't lose what they typed
+      if (type === 'text') setInputText(textToSend);
+      setUploading(false);
+      Alert.alert('Error', 'Failed to send message. Please try again.');
     }
   };
 
-  // Firestore Timestamps need .toDate() before they can be formatted;
-  // a message that hasn't been confirmed by the server yet may briefly
-  // have a null createdAt, so guard against that too.
-  // Resolve every UID that could show up in this screen — message senders,
-  // group admins, and group members — to real names in one batch.
-  const messageSenderUids = messages.map((m) => m.senderId).filter(Boolean);
-  const groupParticipantUids = groupDetails?.participants || [];
-  const groupAdminUids = groupDetails?.admins || [];
-  const userProfiles = useUserProfiles([
-    ...messageSenderUids,
-    ...groupParticipantUids,
-    ...groupAdminUids,
-  ]);
+  const pickImage = async () => {
+    const result = await launchImageLibrary({
+      mediaType: 'mixed',
+      quality: 0.8,
+    });
+
+    if (result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      handleSendMessage(asset.type?.includes('video') ? 'video' : 'image', {
+        uri: asset.uri,
+        name: asset.fileName || `image_${Date.now()}.${asset.uri.split('.').pop()}`
+      });
+    }
+  };
+
+  const pickDocument = async () => {
+    try {
+      const res = await DocumentPicker.pick({
+        type: [DocumentPicker.types.allFiles],
+      });
+      if (res && res.length > 0) {
+        const file = res[0];
+        handleSendMessage('file', { uri: file.uri, name: file.name });
+      }
+    } catch (err) {
+      if (!DocumentPicker.isCancel(err)) {
+        console.error(err);
+      }
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const result = await audioRecorderPlayer.startRecorder();
+      audioRecorderPlayer.addRecorderBackListener((e) => {
+        setRecordTime(audioRecorderPlayer.mmssss(Math.floor(e.currentPosition)));
+        return;
+      });
+      setIsRecording(true);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      const result = await audioRecorderPlayer.stopRecorder();
+      audioRecorderPlayer.removeRecorderBackListener();
+      setIsRecording(false);
+      setRecordTime('00:00:00');
+      handleSendMessage('voice', { uri: result, name: `voice_${Date.now()}.m4a` });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const formatMessageTime = (createdAt) => {
     if (!createdAt || typeof createdAt.toDate !== 'function') return '';
@@ -170,24 +200,36 @@ export default function ChatWindowScreen({ route, navigation }) {
         {!isMe && (
           <View style={[styles.miniAvatar, { backgroundColor: cardColor }, isSenderAdmin && { backgroundColor: accentColor }]}>
             <Text style={[styles.miniAvatarText, { color: isSenderAdmin ? '#ffffff' : secondaryText }]}>
-              {isGroup ? senderDisplayName.substring(0, 1).toUpperCase() : contactName.substring(0, 1)}
+              {senderDisplayName.substring(0, 1).toUpperCase()}
             </Text>
           </View>
         )}
         <View style={[styles.bubble, isMe ? [styles.bubbleMe, { backgroundColor: brandColor }] : [styles.bubbleThem, { backgroundColor: cardColor }]]}>
           {isGroup && !isMe && (
-            <View style={styles.senderHeader}>
-              <Text style={[styles.senderNameText, { color: isSenderAdmin ? accentColor : brandColor }]}>
-                {senderDisplayName}
-              </Text>
-              {isSenderAdmin && (
-                <View style={[styles.adminBadge, { backgroundColor: accentColor }]}>
-                  <Text style={styles.adminBadgeText}>Leader</Text>
-                </View>
-              )}
-            </View>
+            <Text style={[styles.senderNameText, { color: isSenderAdmin ? accentColor : brandColor }]}>{senderDisplayName}</Text>
           )}
-          <Text style={{ color: isMe ? '#ffffff' : textColor, fontSize: 14, lineHeight: 20 }}>{item.text}</Text>
+
+          {item.type === 'text' && <Text style={{ color: isMe ? '#ffffff' : textColor, fontSize: 14 }}>{item.text}</Text>}
+
+          {item.type === 'image' && (
+            <Image source={{ uri: item.attachmentUrl }} style={styles.messageImage} resizeMode="cover" />
+          )}
+
+          {(item.type === 'file' || item.type === 'video') && (
+            <TouchableOpacity style={styles.fileAttachment} onPress={() => Linking.openURL(item.attachmentUrl)}>
+              <Icon name="document-text-outline" size={24} color={isMe ? '#fff' : brandColor} />
+              <Text style={{ color: isMe ? '#fff' : textColor, marginLeft: 8, fontSize: 12 }}>{item.attachmentName || 'Attachment'}</Text>
+            </TouchableOpacity>
+          )}
+
+          {item.type === 'voice' && (
+            <TouchableOpacity style={styles.voiceAttachment} onPress={() => Linking.openURL(item.attachmentUrl)}>
+              <Icon name="play-outline" size={20} color={isMe ? '#fff' : brandColor} />
+              <View style={[styles.voiceWaveform, { backgroundColor: isMe ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)' }]} />
+              <Text style={{ color: isMe ? '#fff' : secondaryText, fontSize: 10, marginLeft: 8 }}>Voice</Text>
+            </TouchableOpacity>
+          )}
+
           <Text style={{ color: isMe ? 'rgba(255,255,255,0.7)' : secondaryText, fontSize: 9, textAlign: 'right', marginTop: 4 }}>
             {formatMessageTime(item.createdAt)}
           </Text>
@@ -196,99 +238,21 @@ export default function ChatWindowScreen({ route, navigation }) {
     );
   };
 
-  // ─── Decision Chat View ──────────────────────────────────────────────────
-  if (isDecisionChat) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: bgColor }]}>
-        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: brandColor }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Svg width={24} height={24} viewBox="0 0 24 24">
-              <Path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="#ffffff" />
-            </Svg>
-          </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>🔑 Key Decision Enablers</Text>
-            <Text style={styles.headerSubtitle}>Powered by SSGI Data</Text>
-          </View>
-          <View style={{ width: 40 }} />
-        </View>
-
-        <ScrollView contentContainerStyle={styles.decisionList} showsVerticalScrollIndicator={false}>
-          <Typography variant="caption" color={secondaryText} style={styles.decisionHeaderText}>
-            Select a tool to access SSGI decision data
-          </Typography>
-          {DECISION_ENABLERS.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.decisionCard, { backgroundColor: cardColor, borderColor: borderColor }]}
-              onPress={item.action}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.decisionIcon, { backgroundColor: brandColor + '1A' }]}>
-                <Icon name={item.icon} size={24} color={brandColor} />
-              </View>
-              <View style={styles.decisionContent}>
-                <Typography variant="body" color={textColor} style={styles.decisionTitle}>{item.title}</Typography>
-                <Typography variant="caption" color={secondaryText}>{item.description}</Typography>
-              </View>
-              <Icon name="chevron-forward-outline" size={18} color={secondaryText} />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  // ─── Normal Chat View ──────────────────────────────────────────────────
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bgColor }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+
         {/* Header */}
         <View style={[styles.header, { backgroundColor: brandColor }]}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Svg width={24} height={24} viewBox="0 0 24 24">
-              <Path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="#ffffff" />
-            </Svg>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icon name="chevron-back-outline" size={28} color="#fff" />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.headerTitleContainer}
-            onPress={() => groupDetails && setShowInfoModal(true)}
-            disabled={!groupDetails}
-            activeOpacity={groupDetails ? 0.7 : 1}
-          >
+          <TouchableOpacity style={styles.headerTitleContainer} onPress={() => groupDetails && setShowInfoModal(true)} activeOpacity={0.7}>
             <Text style={styles.headerTitle}>{contactName}</Text>
-            <Text style={styles.headerSubtitle}>
-              {groupDetails
-                ? `group • ${groupDetails.participants?.length || 0} members • tap for info`
-                : 'satellite linked • active'}
-            </Text>
+            <Text style={styles.headerSubtitle}>{groupDetails ? `${groupDetails.participants?.length || 0} members` : 'online'}</Text>
           </TouchableOpacity>
-
-          {groupDetails ? (
-            <TouchableOpacity
-              style={styles.infoIconWrapper}
-              onPress={() => setShowInfoModal(true)}
-              activeOpacity={0.7}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Icon name="information-circle-outline" size={22} color="#ffffff" />
-            </TouchableOpacity>
-          ) : (
-            <View style={{ width: 32 }} />
-          )}
+          <View style={{ width: 40 }} />
         </View>
 
         {/* Messages */}
@@ -297,123 +261,54 @@ export default function ChatWindowScreen({ route, navigation }) {
           keyExtractor={(item) => item.id}
           renderItem={renderMessageItem}
           contentContainerStyle={styles.messagesListContent}
-          bounces={true}
+          inverted={false}
         />
+
+        {uploading && (
+          <View style={styles.uploadingOverlay}>
+            <ActivityIndicator color={brandColor} />
+            <Text style={{ color: brandColor, marginLeft: 10 }}>Uploading attachment...</Text>
+          </View>
+        )}
 
         {/* Input Bar */}
         <View style={[styles.inputContainer, { backgroundColor: cardColor, borderTopColor: borderColor }]}>
-          <TextInput
-            style={[styles.input, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f0f2f5', color: textColor }]}
-            placeholder="Type your orbital message..."
-            placeholderTextColor={secondaryText}
-            value={inputText}
-            onChangeText={setInputText}
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, { backgroundColor: brandColor }, !inputText.trim() && styles.sendButtonDisabled]}
-            onPress={handleSendMessage}
-            disabled={!inputText.trim()}
-          >
-            <Svg width={18} height={18} viewBox="0 0 24 24">
-              <Path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="#ffffff" />
-            </Svg>
-          </TouchableOpacity>
-        </View>
-
-        {/* Department Info Modal */}
-        {groupDetails && (
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={showInfoModal}
-            onRequestClose={() => setShowInfoModal(false)}
-          >
-            <View style={styles.modalOverlay}>
-              <View style={[styles.modalContent, { backgroundColor: bgColor }]}>
-                {/* Modal Header */}
-                <View style={[styles.modalHeader, { backgroundColor: cardColor, borderBottomColor: borderColor }]}>
-                  <Typography variant="heading3" color={textColor}>Department Group Info</Typography>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    {groupDetails.admins?.includes(user?.uid) && (
-                      <TouchableOpacity
-                        style={{ marginRight: 15 }}
-                        onPress={() => {
-                          setShowInfoModal(false);
-                          navigation.navigate('NewChat', { addMemberToChatId: chatId });
-                        }}
-                      >
-                        <Icon name="person-add-outline" size={24} color={brandColor} />
-                      </TouchableOpacity>
-                    )}
-                    <TouchableOpacity
-                      style={styles.closeButton}
-                      onPress={() => setShowInfoModal(false)}
-                    >
-                      <Icon name="close" size={24} color={secondaryText} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                <ScrollView contentContainerStyle={styles.modalBody}>
-                  {/* Department Name & Description */}
-                  <View style={[styles.infoCard, { backgroundColor: cardColor, borderColor: borderColor }]}>
-                    <Typography variant="heading3" color={brandColor} style={styles.infoCardName}>{groupDetails.name}</Typography>
-                    {/* No description field exists on real group chat docs yet — omitted rather than showing undefined */}
-                  </View>
-
-                  {/* Staff Leader / Admins section.
-                      Real group docs store `admins` as an array of UIDs, not a single
-                      named leader — showing all admins here instead of one "leader". */}
-                  <Typography variant="caption" color={secondaryText} style={styles.sectionTitle}>ADMINS</Typography>
-                  {(groupDetails.admins || []).map((adminUid) => (
-                    <View style={[styles.leaderCard, { backgroundColor: accentColor }]} key={adminUid}>
-                      <View style={styles.leaderBadge}>
-                        <Icon name="shield-checkmark-outline" size={20} color="#ffffff" />
-                        <Text style={styles.leaderBadgeText}>Admin</Text>
-                      </View>
-                      <View style={styles.leaderInfo}>
-                        <Text style={styles.leaderName}>{getDisplayName(userProfiles, adminUid)}</Text>
-                      </View>
-                    </View>
-                  ))}
-
-                  {/* Staff Members List — same UID caveat as above */}
-                  <Typography variant="caption" color={secondaryText} style={styles.sectionTitle}>
-                    MEMBERS ({groupDetails.participants?.length || 0})
-                  </Typography>
-                  <View style={[styles.membersListCard, { backgroundColor: cardColor, borderColor: borderColor }]}>
-                    {(groupDetails.participants || []).map((memberUid, index) => {
-                      const isAdmin = groupDetails.admins?.includes(memberUid);
-                      const memberDisplayName = getDisplayName(userProfiles, memberUid);
-                      return (
-                        <View key={memberUid}>
-                          <View style={styles.memberRow}>
-                            <View style={[styles.memberAvatar, isAdmin && { backgroundColor: accentColor }]}>
-                              <Text style={styles.memberAvatarText}>
-                                {memberDisplayName.substring(0, 1).toUpperCase()}
-                              </Text>
-                            </View>
-                            <View style={styles.memberInfo}>
-                              <Typography variant="body" color={textColor}>{memberDisplayName}</Typography>
-                            </View>
-                            {isAdmin && (
-                              <View style={[styles.leaderTag, { backgroundColor: accentColor + '26' }]}>
-                                <Text style={[styles.leaderTagText, { color: accentColor }]}>Admin</Text>
-                              </View>
-                            )}
-                          </View>
-                          {index < (groupDetails.participants?.length || 0) - 1 && (
-                            <View style={[styles.modalDivider, { backgroundColor: borderColor }]} />
-                          )}
-                        </View>
-                      );
-                    })}
-                  </View>
-                </ScrollView>
-              </View>
+          {!isRecording ? (
+            <>
+              <TouchableOpacity onPress={pickImage} style={styles.attachBtn}>
+                <Icon name="image-outline" size={24} color={secondaryText} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={pickDocument} style={styles.attachBtn}>
+                <Icon name="attach-outline" size={24} color={secondaryText} />
+              </TouchableOpacity>
+              <TextInput
+                style={[styles.input, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f0f2f5', color: textColor }]}
+                placeholder="Message..."
+                placeholderTextColor={secondaryText}
+                value={inputText}
+                onChangeText={setInputText}
+              />
+              {inputText.trim() ? (
+                <TouchableOpacity style={[styles.sendButton, { backgroundColor: brandColor }]} onPress={() => handleSendMessage('text')}>
+                  <Icon name="chevron-forward-outline" size={24} color="#fff" />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={styles.micBtn} onPress={startRecording}>
+                  <Icon name="mic-outline" size={24} color={brandColor} />
+                </TouchableOpacity>
+              )}
+            </>
+          ) : (
+            <View style={styles.recordingContainer}>
+              <Icon name="mic-outline" size={20} color="#ff4d4d" />
+              <Text style={styles.recordingTimer}>{recordTime}</Text>
+              <View style={styles.recordingWave} />
+              <TouchableOpacity onPress={stopRecording} style={styles.stopBtn}>
+                <Icon name="stop-circle-outline" size={32} color="#ff4d4d" />
+              </TouchableOpacity>
             </View>
-          </Modal>
-        )}
+          )}
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -428,177 +323,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.08)',
   },
   backButton: { padding: 4 },
-  headerTitleContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
-  headerTitle: { fontSize: 17, fontWeight: 'bold', color: '#ffffff' },
-  headerSubtitle: { fontSize: 11, color: '#fdfdfd', opacity: 0.9, marginTop: 2, textAlign: 'center' },
-  infoIconWrapper: { padding: 4 },
-  decisionList: { padding: SPACING.lg, paddingBottom: 30 },
-  decisionHeaderText: { textAlign: 'center', marginBottom: SPACING.md },
-  decisionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.md,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    marginBottom: SPACING.md,
-  },
-  decisionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  decisionContent: { flex: 1 },
-  decisionTitle: { fontWeight: '600', marginBottom: 2 },
+  headerTitleContainer: { flex: 1, alignItems: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: 'bold', color: '#fff' },
+  headerSubtitle: { fontSize: 11, color: '#fff', opacity: 0.8 },
   messagesListContent: { padding: 15, paddingBottom: 25 },
   messageRow: { flexDirection: 'row', marginBottom: 15, alignItems: 'flex-end' },
   messageRowMe: { justifyContent: 'flex-end' },
   messageRowThem: { justifyContent: 'flex-start' },
-  miniAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-    marginBottom: 2,
-  },
+  miniAvatar: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 8 },
   miniAvatarText: { fontSize: 12, fontWeight: 'bold' },
-  bubble: {
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    maxWidth: '75%',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 1.5,
-      },
-      android: { elevation: 1 },
-    }),
-  },
+  bubble: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '75%' },
   bubbleMe: { borderBottomRightRadius: 4 },
   bubbleThem: { borderBottomLeftRadius: 4 },
-  senderHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
-  senderNameText: { fontSize: 12, fontWeight: 'bold' },
-  adminBadge: { borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1, marginLeft: 6 },
-  adminBadgeText: { color: '#ffffff', fontSize: 8, fontWeight: 'bold' },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderTopWidth: 1,
-    paddingBottom: Platform.OS === 'ios' ? 25 : 10,
-  },
-  input: {
-    flex: 1,
-    borderRadius: 20,
-    height: 40,
-    paddingHorizontal: 15,
-    fontSize: 14,
-    marginRight: 10,
-  },
-  sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendButtonDisabled: { opacity: 0.5 },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    maxHeight: '85%',
-    paddingBottom: 25,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    borderBottomWidth: 1,
-  },
-  closeButton: { padding: 2 },
-  modalBody: { padding: 20 },
-  infoCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-  },
-  infoCardName: { marginBottom: 6 },
-  sectionTitle: {
-    fontWeight: 'bold',
-    marginBottom: 8,
-    marginLeft: 4,
-    letterSpacing: 0.8,
-  },
-  leaderCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    padding: 15,
-    marginBottom: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-      },
-      android: { elevation: 4 },
-    }),
-  },
-  leaderBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    borderRadius: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 15,
-  },
-  leaderBadgeText: { color: '#ffffff', fontSize: 10, fontWeight: 'bold', marginTop: 2 },
-  leaderInfo: { flex: 1 },
-  leaderName: { fontSize: 16, fontWeight: 'bold', color: '#ffffff' },
-  membersListCard: {
-    borderRadius: 16,
-    padding: 15,
-    borderWidth: 1,
-  },
-  memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  memberAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#dcdcdc',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  memberAvatarText: { fontSize: 14, fontWeight: 'bold', color: '#555555' },
-  memberInfo: { flex: 1 },
-  leaderTag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  leaderTagText: { fontSize: 10, fontWeight: 'bold' },
-  modalDivider: { height: 1, marginVertical: 4 },
+  senderNameText: { fontSize: 10, fontWeight: 'bold', marginBottom: 2 },
+  messageImage: { width: 200, height: 200, borderRadius: 12, marginVertical: 4 },
+  fileAttachment: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.05)', padding: 8, borderRadius: 8, marginVertical: 4 },
+  voiceAttachment: { flexDirection: 'row', alignItems: 'center', minWidth: 150, padding: 8 },
+  voiceWaveform: { flex: 1, height: 2, marginHorizontal: 10, borderRadius: 1 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', padding: 10, borderTopWidth: 1 },
+  input: { flex: 1, borderRadius: 20, height: 40, paddingHorizontal: 15, marginHorizontal: 10 },
+  attachBtn: { padding: 5 },
+  micBtn: { padding: 5 },
+  sendButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  recordingContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10 },
+  recordingTimer: { marginLeft: 10, fontWeight: 'bold', color: '#ff4d4d' },
+  recordingWave: { flex: 1, height: 2, backgroundColor: '#ff4d4d', marginHorizontal: 20, opacity: 0.3 },
+  stopBtn: { padding: 5 },
+  uploadingOverlay: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 10, backgroundColor: 'rgba(255,255,255,0.9)' },
 });

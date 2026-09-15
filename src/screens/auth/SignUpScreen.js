@@ -17,7 +17,7 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '../../firebase/context/AuthContext';
-import LogoSVG from '../../assets/images/logo.svg';
+import { LogoSVG } from '../../components/Branding';
 
 const { width, height } = Dimensions.get('window');
 
@@ -124,17 +124,7 @@ export default function SignUpScreen({ navigation }) {
     setError('');
 
     try {
-      const userCredential = await signUp(email, password, fullName);
-      const uid = userCredential?.user?.uid;
-      if (uid) {
-        await firestore().collection('users').doc(uid).set({
-          fullName: fullName.trim(),
-          phone: phone.trim(),
-          email: email.trim(),
-          createdAt: new Date().toISOString(),
-          emailVerified: false,
-        });
-      }
+      await signUp(email, password, fullName, { phone: phone.trim() });
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
       setLoading(false);

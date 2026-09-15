@@ -6,6 +6,7 @@ import { useAuth } from '../firebase/context/AuthContext';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignUpScreen from '../screens/auth/SignUpScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import VerifyEmailScreen from '../screens/auth/VerifyEmailScreen';
 import ChatWindowScreen from '../screens/chat/ChatWindowScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
@@ -51,6 +52,7 @@ export default function AppNavigator() {
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           </>
         ) : !user.emailVerified ? (
           // Logged in but hasn't verified their email yet

@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../firebase/context/ThemeContext';
-import Logo from '../../assets/images/logo.svg';
+import { LogoSVG as Logo } from '../../components/Branding';
 
 const Icon = ({ name, size = 24, color = '#000' }) => {
   let path = '';

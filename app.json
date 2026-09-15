@@ -1,4 +1,7 @@
 {
   "name": "Android_Project",
-  "displayName": "Android_Project"
+  "displayName": "Android_Project",
+  "plugins": [
+    "expo-asset"
+  ]
 }

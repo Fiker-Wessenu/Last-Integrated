@@ -33,15 +33,15 @@ export const AuthProvider = ({ children }) => {
         .doc(firebaseUser.uid)
         .onSnapshot(
           (doc) => {
-            const data = doc.exists ? doc.data() : {};
+            const docData = (doc && doc.exists) ? doc.data() : {};
             setUser({
               uid: firebaseUser.uid,
               email: firebaseUser.email,
               emailVerified: firebaseUser.emailVerified,
-              name: data.fullName || null,
-              fullName: data.fullName || null,
-              profilePicture: data.photoURL || null,
-              ...data,
+              ...docData,
+              name: docData.fullName || null,
+              fullName: docData.fullName || null,
+              profilePicture: docData.photoURL || null,
             });
             setLoading(false);
           },
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     return await auth().signInWithEmailAndPassword(email, password);
   };
 
-  const signUp = async (email, password, fullName) => {
+  const signUp = async (email, password, fullName, extraData = {}) => {
     const userCredential = await auth().createUserWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
@@ -91,6 +91,7 @@ export const AuthProvider = ({ children }) => {
       photoURL: null,
       emailVerified: false,
       createdAt: firestore.FieldValue.serverTimestamp(),
+      ...extraData,
     });
 
     return userCredential;
@@ -115,8 +116,12 @@ export const AuthProvider = ({ children }) => {
     return downloadURL;
   };
 
+  const resetPassword = async (email) => {
+    return await auth().sendPasswordResetEmail(email);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, logout, updateProfilePicture }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, logout, updateProfilePicture, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );

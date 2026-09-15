@@ -14,8 +14,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import AntennaTip from '../../assets/images/antenna-tip.svg';
-import LogoSVG from '../../assets/images/logo.svg';
+import { LogoSVG, AntennaTip } from '../../components/Branding';
 import { useAuth } from '../../firebase/context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
@@ -217,6 +216,13 @@ export default function LoginScreen({ navigation }) {
                   </Svg>
                 </TouchableOpacity>
               </View>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('ForgotPassword')}
+                style={styles.forgotPasswordContainer}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Error Message */}
@@ -469,5 +475,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 5,
+  },
+  forgotPasswordContainer: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+    paddingVertical: 4,
+  },
+  forgotPasswordText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1B5674',
+    textDecorationLine: 'underline',
   },
 });

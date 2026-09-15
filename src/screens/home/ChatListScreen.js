@@ -12,9 +12,9 @@ import {
   Modal,
   Image,
   ScrollView,
+  StatusBar,
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../firebase/context/AuthContext';
 import { useTheme } from '../../firebase/context/ThemeContext';
 import {
@@ -126,6 +126,7 @@ export default function ChatsListScreen({ navigation }) {
   const getChatDisplayName = (chat) => {
     if (chat.type === 'group') return chat.groupName || chat.name || 'Group';
     const otherUid = chat.participants?.find((uid) => uid !== user?.uid);
+    if (!otherUid && chat.groupName) return chat.groupName; // Handle "Saved Messages"
     return getDisplayName(userProfiles, otherUid);
   };
 
@@ -353,7 +354,7 @@ export default function ChatsListScreen({ navigation }) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bgColor }]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
